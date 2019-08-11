@@ -1,0 +1,12 @@
+[package]
+name = "cli-rcvs"
+version = "0.1.0"
+authors = ["Pierre Colin"]
+edition = "2018"
+
+[dependencies]
+rcvs = { path = "../rcvs" }
+clap = "2.33.0"
+dialoguer = "0.4.0"
+serde = { version = "1.0.95", features = ["derive"] }
+serde_json = "1.0.40"
