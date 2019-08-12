@@ -6,7 +6,8 @@ use std::{
     fs,
     io::prelude::*,
     net::{TcpListener, TcpStream},
-    sync::{Arc, Mutex},
+    sync::{atomic, mpsc, Arc, Mutex},
+    thread,
 };
 
 use super::election_info;
@@ -57,6 +58,13 @@ pub fn run(matches: &clap::ArgMatches) {
     let ip_address = format!("0.0.0.0:{}", matches.value_of("port").unwrap());
     println!("Opening TCP listener on {}", ip_address);
     let listener = TcpListener::bind(ip_address).unwrap();
+    
+    // Set listener to nonblocking if possible
+    listener.set_nonblocking(true).unwrap_or_else(|_| {
+        eprintln!("error: Failed to set listener to nonblocking.\n
+                   \tThere will be no way of gracefully exit the server.");
+    });
+
     let peers = Arc::new(Mutex::new(HashSet::<std::net::IpAddr>::new()));
 
     let alternatives = Arc::new({
@@ -68,22 +76,35 @@ pub fn run(matches: &clap::ArgMatches) {
     });
     let election = Arc::new(Mutex::new(rcvs::Election::<String>::new()));
 
-    let pool = thread_pool::ThreadPool::new(4).unwrap();
+    //let (sender, receiver) = mpsc::channel();
+    let stop = Arc::new(atomic::AtomicBool::new(false));
+    let stop_cloned = Arc::clone(&stop);
 
-    for stream in listener.incoming() {
-        let alternatives = Arc::clone(&alternatives);
-        let data = Arc::clone(&data);
-        let election = Arc::clone(&election);
-        let peers = Arc::clone(&peers);
+    thread::spawn(move || {
+        let pool = thread_pool::ThreadPool::new(4).unwrap();
 
-        pool.run(move || {
-            handle_connection(stream.unwrap(),
-                              &election,
-                              &alternatives,
-                              &data,
-                              &peers);
-        });
-    }
+        loop {
+            if let Ok((stream, _)) = listener.accept() {
+                let alternatives = Arc::clone(&alternatives);
+                let data = Arc::clone(&data);
+                let election = Arc::clone(&election);
+                let peers = Arc::clone(&peers);
 
-    println!("Closing TCP listener");
+                pool.run(move || {
+                    handle_connection(stream,
+                                      &election,
+                                      &alternatives,
+                                      &data,
+                                      &peers);
+                });
+            } else if stop_cloned.load(atomic::Ordering::Relaxed) {
+                break;
+            }
+        }
+
+        println!("Closing TCP listener");
+    });
+
+    thread::sleep(std::time::Duration::from_secs(10));
+    stop.store(true, atomic::Ordering::Relaxed);
 }
