@@ -6,7 +6,7 @@ use std::{
     fs,
     io::prelude::*,
     net::{TcpListener, TcpStream},
-    sync::{atomic, mpsc, Arc, Mutex},
+    sync::{atomic, Arc, Mutex},
     thread,
 };
 
@@ -76,7 +76,6 @@ pub fn run(matches: &clap::ArgMatches) {
     });
     let election = Arc::new(Mutex::new(rcvs::Election::<String>::new()));
 
-    //let (sender, receiver) = mpsc::channel();
     let stop = Arc::new(atomic::AtomicBool::new(false));
     let stop_cloned = Arc::clone(&stop);
 
