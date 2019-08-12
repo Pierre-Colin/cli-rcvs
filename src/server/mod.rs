@@ -1,4 +1,5 @@
 mod data;
+mod thread_pool;
 
 use std::{
     collections::HashSet,
@@ -6,7 +7,6 @@ use std::{
     io::prelude::*,
     net::{TcpListener, TcpStream},
     sync::{Arc, Mutex},
-    thread,
 };
 
 use super::election_info;
@@ -68,13 +68,15 @@ pub fn run(matches: &clap::ArgMatches) {
     });
     let election = Arc::new(Mutex::new(rcvs::Election::<String>::new()));
 
+    let pool = thread_pool::ThreadPool::new(4).unwrap();
+
     for stream in listener.incoming() {
         let alternatives = Arc::clone(&alternatives);
         let data = Arc::clone(&data);
         let election = Arc::clone(&election);
         let peers = Arc::clone(&peers);
 
-        thread::spawn(move || {
+        pool.run(move || {
             handle_connection(stream.unwrap(),
                               &election,
                               &alternatives,
