@@ -1,5 +1,5 @@
 use std::{
-    sync::{mpsc, Arc, Mutex},
+    sync::{atomic, mpsc, Arc, Mutex},
     thread,
 };
 
@@ -46,6 +46,7 @@ impl Worker {
 pub struct ThreadPool {
     workers: Vec<Worker>,
     sender: mpsc::Sender<Message>,
+    canary: Arc<atomic::AtomicBool>,
 }
 
 impl Drop for ThreadPool {
@@ -60,11 +61,13 @@ impl Drop for ThreadPool {
                 thread.join().unwrap();
             }
         }
+
+        self.canary.store(true, atomic::Ordering::Relaxed);
     }
 }
 
 impl ThreadPool {
-    pub fn new(size: usize) -> Option<ThreadPool> {
+    pub fn new(size: usize, canary: Arc<atomic::AtomicBool>) -> Option<ThreadPool> {
         if size > 0 {
             let (sender, receiver) = mpsc::channel();
             let receiver = Arc::new(Mutex::new(receiver));
@@ -75,6 +78,7 @@ impl ThreadPool {
             Some(ThreadPool {
                 workers: workers,
                 sender: sender,
+                canary: canary,
             })
         } else {
             None

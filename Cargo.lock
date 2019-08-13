@@ -88,6 +88,7 @@ version = "0.1.0"
 dependencies = [
  "clap 2.33.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "dialoguer 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "rand 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "rcvs 0.1.0 (git+https://github.com/Pierre-Colin/rcvs.git)",
  "serde 1.0.95 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_json 1.0.40 (registry+https://github.com/rust-lang/crates.io-index)",

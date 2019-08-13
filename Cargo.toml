@@ -5,6 +5,7 @@ authors = ["Pierre Colin"]
 edition = "2018"
 
 [dependencies]
+rand = "0.7.0"
 rcvs = { git = "https://github.com/Pierre-Colin/rcvs.git" }
 clap = "2.33.0"
 dialoguer = "0.4.0"
