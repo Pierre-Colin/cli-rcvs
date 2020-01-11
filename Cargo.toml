@@ -5,9 +5,9 @@ authors = ["Pierre Colin"]
 edition = "2018"
 
 [dependencies]
-rand = "0.7.0"
+rand = "0.7.3"
 rcvs = { git = "https://github.com/Pierre-Colin/rcvs.git" }
 clap = "2.33.0"
-dialoguer = "0.4.0"
-serde = { version = "1.0.95", features = ["derive"] }
-serde_json = "1.0.40"
+dialoguer = "0.5.0"
+serde = { version = "1.0.104", features = ["derive"] }
+serde_json = "1.0.44"

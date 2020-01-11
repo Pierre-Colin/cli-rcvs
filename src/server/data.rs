@@ -13,7 +13,9 @@ pub fn squeeze_json(string: String) -> String {
             result.push(c);
             last_comma = c == ',';
         } else if c == '\n' {
-            if last_comma { result.push(' '); }
+            if last_comma {
+                result.push(' ');
+            }
             indent = true;
             last_comma = false;
         }
@@ -32,13 +34,13 @@ enum ParseState {
     Done,
 }
 
-pub fn parse_ballot(s: String, alternatives: &HashSet<String>)
-    -> Option<rcvs::Ballot<String>>
-{
+pub fn parse_ballot(s: String, alternatives: &HashSet<String>) -> Option<rcvs::Ballot<String>> {
     let mut ballot = rcvs::Ballot::new();
     let mut state = ParseState::Begin;
     for c in s.chars() {
-        if c.is_whitespace() { continue; }
+        if c.is_whitespace() {
+            continue;
+        }
         match state {
             ParseState::Begin => {
                 if c != '[' {
@@ -46,7 +48,7 @@ pub fn parse_ballot(s: String, alternatives: &HashSet<String>)
                 } else {
                     state = ParseState::OpenEntry;
                 }
-            },
+            }
             ParseState::OpenEntry => {
                 if c == ']' {
                     state = ParseState::Done;
@@ -55,7 +57,7 @@ pub fn parse_ballot(s: String, alternatives: &HashSet<String>)
                 } else {
                     state = ParseState::Name(String::new());
                 }
-            },
+            }
             ParseState::Name(s) => {
                 if c == ',' {
                     if alternatives.contains(&s) {
@@ -70,7 +72,7 @@ pub fn parse_ballot(s: String, alternatives: &HashSet<String>)
                 } else {
                     return None;
                 }
-            },
+            }
             ParseState::Low(s, n) => {
                 if c == ',' {
                     state = ParseState::High(s, n, 0);
@@ -79,7 +81,7 @@ pub fn parse_ballot(s: String, alternatives: &HashSet<String>)
                 } else {
                     return None;
                 }
-            },
+            }
             ParseState::High(s, m, n) => {
                 if c == ')' {
                     ballot.insert(s.to_string(), m, n);
@@ -89,7 +91,7 @@ pub fn parse_ballot(s: String, alternatives: &HashSet<String>)
                 } else {
                     return None;
                 }
-            },
+            }
             ParseState::CloseEntry => {
                 if c == ']' {
                     state = ParseState::Done;
@@ -98,8 +100,10 @@ pub fn parse_ballot(s: String, alternatives: &HashSet<String>)
                 } else {
                     return None;
                 }
-            },
-            ParseState::Done => { return None; },
+            }
+            ParseState::Done => {
+                return None;
+            }
         };
     }
     Some(ballot)

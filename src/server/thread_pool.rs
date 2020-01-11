@@ -25,18 +25,14 @@ struct Worker {
 }
 
 impl Worker {
-    pub fn new(receiver: Arc<Mutex<mpsc::Receiver<Message>>>) ->
-        Worker
-    {
+    pub fn new(receiver: Arc<Mutex<mpsc::Receiver<Message>>>) -> Worker {
         Worker {
-            thread: Some(thread::spawn(move || {
-                loop {
-                    let message = receiver.lock().unwrap().recv().unwrap();
+            thread: Some(thread::spawn(move || loop {
+                let message = receiver.lock().unwrap().recv().unwrap();
 
-                    match message {
-                        Message::NewJob(job) => job.call_box(),
-                        Message::Terminate => break,
-                    }
+                match message {
+                    Message::NewJob(job) => job.call_box(),
+                    Message::Terminate => break,
                 }
             })),
         }
@@ -99,10 +95,12 @@ mod tests {
         assert!(ThreadPool::new(0).is_none(), "Size-0 pool is instanced");
         for size in 1..1000000 {
             if let Some(pool) = ThreadPool::new(size) {
-                assert_eq!(pool.threads.capacity(),
-                           size,
-                           "Pool doesn't have capacity {}",
-                           size);
+                assert_eq!(
+                    pool.threads.capacity(),
+                    size,
+                    "Pool doesn't have capacity {}",
+                    size
+                );
             } else {
                 panic!("Size-{} pool isn't instanced", size);
             }
