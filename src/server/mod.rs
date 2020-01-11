@@ -43,8 +43,6 @@ fn handle_connection(
             stream.write(b"VOTED").unwrap();
             stream.flush().unwrap();
         }
-
-        println!("{}", election);
     }
 }
 
