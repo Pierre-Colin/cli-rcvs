@@ -6,6 +6,7 @@ edition = "2018"
 
 [dependencies]
 rand = "0.7.3"
+regex = "1"
 rcvs = { git = "https://github.com/Pierre-Colin/rcvs.git" }
 clap = "2.33.0"
 dialoguer = "0.5.0"

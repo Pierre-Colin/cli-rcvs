@@ -1,12 +1,6 @@
-use std::{
-    error::Error,
-    fmt,
-    io::prelude::*,
-    iter,
-    net::TcpStream,
-};
+use std::{error::Error, fmt, io::prelude::*, iter, net::TcpStream};
 
-use dialoguer::{Input, Select, theme::ColorfulTheme};
+use dialoguer::{theme::ColorfulTheme, Input, Select};
 
 use super::election_info;
 use super::util;
@@ -31,21 +25,26 @@ impl Error for ClientError {
         }
     }
 
-    fn source(&self) -> Option<&(dyn Error + 'static)> { None }
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        None
+    }
 }
 
-fn format_choice(entry: &(election_info::Choice, Option<rcvs::Rank>)) -> String
-{
+fn format_choice(entry: &(election_info::Choice, Option<rcvs::Rank>)) -> String {
     let (alternative, rank) = entry;
     if let Some(rank) = rank {
-        format!("{}, {}: {}",
-                alternative.name(),
-                rank,
-                alternative.description())
+        format!(
+            "{}, {}: {}",
+            alternative.name(),
+            rank,
+            alternative.description()
+        )
     } else {
-        format!("{}, UNRANKED: {}",
-                alternative.name(),
-                alternative.description())
+        format!(
+            "{}, UNRANKED: {}",
+            alternative.name(),
+            alternative.description()
+        )
     }
 }
 
@@ -76,9 +75,9 @@ fn parse_rank(string: String) -> Result<rcvs::Rank, ClientError> {
     }
 }
 
-fn vec_to_ballot(alternatives: Vec<(election_info::Choice, Option<rcvs::Rank>)>)
-    -> rcvs::Ballot<String>
-{
+fn vec_to_ballot(
+    alternatives: Vec<(election_info::Choice, Option<rcvs::Rank>)>,
+) -> rcvs::Ballot<String> {
     let mut ballot = rcvs::Ballot::<String>::new();
     for (choice, rank) in alternatives.into_iter() {
         if let Some(rank) = rank {
@@ -94,8 +93,8 @@ fn ballot_wizzard(structure: election_info::Election) -> rcvs::Ballot<String> {
     let mut done = false;
     while !done {
         let choices: Vec<String> = iter::once("Done".to_string())
-                .chain(alternatives.iter().map(format_choice))
-                .collect();
+            .chain(alternatives.iter().map(format_choice))
+            .collect();
         if let Ok(i) = Select::with_theme(&ColorfulTheme::default())
             .with_prompt("Pick an alternative")
             .default(0)
@@ -128,25 +127,25 @@ pub fn run(matches: &clap::ArgMatches) {
     let ip_address = matches.value_of("SERVER").unwrap();
     match TcpStream::connect(ip_address) {
         Ok(mut stream) => {
-            let data = util::read_packet(&mut stream, 2048)
-                .expect("Failed to read JSON data");
+            let data = util::read_packet(&mut stream, 2048).expect("Failed to read JSON data");
             if data == "VOTED" {
                 println!("Already voted.");
             } else {
-                let structure: election_info::Election = serde_json::from_str(&data)
-                    .expect("Failed to parse JSON data");
+                let structure: election_info::Election =
+                    serde_json::from_str(&data).expect("Failed to parse JSON data");
                 println!("{}", structure);
                 let ballot = ballot_wizzard(structure);
                 let ballot = election_info::serialize_ballot(ballot);
                 println!("{}", ballot);
-                stream.write(&ballot.into_bytes())
+                stream
+                    .write(&ballot.into_bytes())
                     .expect("Failed to send ballot data");
                 stream.flush().unwrap();
             }
-        },
+        }
         Err(what) => {
             eprintln!("error: {}", what);
             std::process::exit(1);
-        },
+        }
     }
 }

@@ -15,9 +15,13 @@ impl fmt::Display for Choice {
 }
 
 impl Choice {
-    pub fn name(&self) -> String { self.name.to_string() }
+    pub fn name(&self) -> String {
+        self.name.to_string()
+    }
 
-    pub fn description(&self) -> String { self.description.to_string() }
+    pub fn description(&self) -> String {
+        self.description.to_string()
+    }
 }
 
 #[derive(Serialize, Deserialize)]
@@ -38,18 +42,26 @@ impl fmt::Display for Election {
 }
 
 impl Election {
-    pub fn iter(&self) -> std::slice::Iter<Choice> { self.alternatives.iter() }
+    pub fn iter(&self) -> std::slice::Iter<Choice> {
+        self.alternatives.iter()
+    }
 }
 
 pub fn serialize_ballot(ballot: rcvs::Ballot<String>) -> String {
     let mut r = "[".to_string();
     let mut first = true;
     for (alternative, rank) in ballot.into_iter() {
-        if first { first = false; } else { r.push_str(", "); }
-        r.push_str(&format!("({}, {}, {})",
-                            alternative,
-                            rank.low(),
-                            rank.high()));
+        if first {
+            first = false;
+        } else {
+            r.push_str(", ");
+        }
+        r.push_str(&format!(
+            "({}, {}, {})",
+            alternative,
+            rank.low(),
+            rank.high()
+        ));
     }
     r.push(']');
     r

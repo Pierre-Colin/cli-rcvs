@@ -23,88 +23,26 @@ pub fn squeeze_json(string: String) -> String {
     result
 }
 
-#[derive(Debug)]
-enum ParseState {
-    Begin,
-    OpenEntry,
-    Name(String),
-    Low(String, u64),
-    High(String, u64, u64),
-    CloseEntry,
-    Done,
-}
-
 pub fn parse_ballot(s: String, alternatives: &HashSet<String>) -> Option<rcvs::Ballot<String>> {
+    let re = regex::Regex::new(
+        r" *\[ *(?P<inner>\( *([A-Za-z]+) *, *(\d+) *, *(\d+) *\)( *, *\( *[A-Za-z]+ *, *\d+ *, *\d+ *\))*)?\] *",
+    )
+    .expect("Failed to compile regular expression");
+    let inner =
+        regex::Regex::new(r"\((?P<alternative>[A-Za-z]+) *, *(?P<lower>\d+) *, *(?P<upper>\d+)\)")
+            .expect("Failed to compile regular expression");
+    let captures = re.captures(&s).unwrap();
+    let capture = captures.name("inner")?;
     let mut ballot = rcvs::Ballot::new();
-    let mut state = ParseState::Begin;
-    for c in s.chars() {
-        if c.is_whitespace() {
-            continue;
+    for inner_capture in inner.captures_iter(&capture.as_str()) {
+        if !alternatives.contains(&inner_capture["alternative"]) {
+            return None;
         }
-        match state {
-            ParseState::Begin => {
-                if c != '[' {
-                    return None;
-                } else {
-                    state = ParseState::OpenEntry;
-                }
-            }
-            ParseState::OpenEntry => {
-                if c == ']' {
-                    state = ParseState::Done;
-                } else if c != '(' {
-                    return None;
-                } else {
-                    state = ParseState::Name(String::new());
-                }
-            }
-            ParseState::Name(s) => {
-                if c == ',' {
-                    if alternatives.contains(&s) {
-                        state = ParseState::Low(s, 0);
-                    } else {
-                        return None;
-                    }
-                } else if c.is_alphanumeric() {
-                    let mut temp = s;
-                    temp.push(c);
-                    state = ParseState::Name(temp);
-                } else {
-                    return None;
-                }
-            }
-            ParseState::Low(s, n) => {
-                if c == ',' {
-                    state = ParseState::High(s, n, 0);
-                } else if let Some(d) = c.to_digit(10) {
-                    state = ParseState::Low(s, 10 * n + d as u64);
-                } else {
-                    return None;
-                }
-            }
-            ParseState::High(s, m, n) => {
-                if c == ')' {
-                    ballot.insert(s.to_string(), m, n);
-                    state = ParseState::CloseEntry;
-                } else if let Some(d) = c.to_digit(10) {
-                    state = ParseState::High(s, m, 10 * n + d as u64);
-                } else {
-                    return None;
-                }
-            }
-            ParseState::CloseEntry => {
-                if c == ']' {
-                    state = ParseState::Done;
-                } else if c == ',' {
-                    state = ParseState::OpenEntry;
-                } else {
-                    return None;
-                }
-            }
-            ParseState::Done => {
-                return None;
-            }
-        };
+        ballot.insert(
+            inner_capture["alternative"].to_string(),
+            inner_capture["lower"].parse::<u64>().unwrap(),
+            inner_capture["upper"].parse::<u64>().unwrap(),
+        );
     }
     Some(ballot)
 }
